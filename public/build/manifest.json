@@ -1,0 +1,11 @@
+{
+  "resources/assets/install/images/background.jpg": {
+    "file": "assets/background.9dafdcc2.jpg",
+    "src": "resources/assets/install/images/background.jpg"
+  },
+  "resources/assets/install/sass/app.scss": {
+    "file": "assets/app.168aa085.css",
+    "src": "resources/assets/install/sass/app.scss",
+    "isEntry": true
+  }
+}

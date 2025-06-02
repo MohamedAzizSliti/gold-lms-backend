@@ -1,0 +1,167 @@
+{
+    "result_cmd": 1,
+    "deviceOnline": 1,
+    "deviceIdle": 1,
+    "deviceMoving": 1,
+    "categories": "",
+    "is_random_related_vehicles": 0,
+    "deviceStopped": 1,
+    "cross_sell_vehicles": [],
+    "deviceOverspeed": 1,
+    "deviceFuelDrop": 1,
+    "deviceFuelIncrease": 1,
+    "geofenceEnter": 1,
+    "geofenceExit": 1,
+    "deviceAlarm": 1,
+    "contact_mis": 1,
+    "variants": [],
+    "variations": [],
+    "attributes_ids": [],
+    "contact_coupe": 1,
+    "deviceMaintenance": 1,
+    "received_msg": 1,
+    "driver_change": 1,
+    "remorquage": 1,
+    "derapage_fort": 1,
+    "status": 1,
+    "deviceOffline": 1,
+    "methodes_notif": {
+        "result_cmd": {
+            "methods": [
+                1,
+                2,
+                3
+            ]
+        },
+        "deviceOnline": {
+            "methods": [
+                1,
+                2,
+                3
+            ]
+        },
+        "deviceOffline": {
+            "methods": [
+                1,
+                2,
+                3
+            ]
+        },
+        "deviceMoving": {
+            "methods": [
+                1,
+                2,
+                3
+            ]
+        },
+        "deviceIdle": {
+            "methods": [
+                1,
+                2,
+                3
+            ]
+        },
+        "deviceStopped": {
+            "methods": [
+                1,
+                2,
+                3
+            ]
+        },
+        "deviceOverspeed": {
+            "methods": [
+                1,
+                2,
+                3,
+                4
+            ]
+        },
+        "deviceFuelDrop": {
+            "methods": [
+                1,
+                2,
+                3
+            ]
+        },
+        "deviceFuelIncrease": {
+            "methods": [
+                1,
+                2,
+                3
+            ]
+        },
+        "geofenceEnter": {
+            "methods": [
+                1,
+                2,
+                3
+            ]
+        },
+        "geofenceExit": {
+            "methods": [
+                1,
+                2,
+                3,
+                4
+            ]
+        },
+        "deviceAlarm": {
+            "methods": [
+                1,
+                2,
+                3
+            ]
+        },
+        "contact_mis": {
+            "methods": [
+                1,
+                2,
+                3
+            ]
+        },
+        "contact_coupe": {
+            "methods": [
+                1,
+                2,
+                3
+            ]
+        },
+        "deviceMaintenance": {
+            "methods": [
+                1,
+                2,
+                3
+            ]
+        },
+        "received_msg": {
+            "methods": [
+                1,
+                2,
+                3
+            ]
+        },
+        "driver_change": {
+            "methods": [
+                1,
+                2,
+                3
+            ]
+        },
+        "remorquage": {
+            "methods": [
+                1,
+                2,
+                3,
+                4
+            ]
+        },
+        "derapage_fort": {
+            "methods": [
+                1,
+                2,
+                3,
+                4
+            ]
+        }
+    }
+}
