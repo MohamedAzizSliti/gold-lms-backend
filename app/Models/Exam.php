@@ -11,6 +11,9 @@ class Exam extends Model
 {
     protected $guarded = ['id'];
     protected $appends = ['nbr_question'];
+    protected $casts = [
+        'multi_chance' => 'boolean',
+    ];
 
     use HasFactory;
 

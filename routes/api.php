@@ -137,7 +137,10 @@ Route::get('create-course','App\Http\Controllers\CourseController@create');
 Route::post('update-course/{course}','App\Http\Controllers\CourseController@updateCourse');
 Route::get('course/slug/{slug}', 'App\Http\Controllers\ProductController@getProductBySlug');
 Route::get('exams/course/{id}', 'App\Http\Controllers\ExamController@getExamByCourseId');
+Route::apiResource('quiz', 'App\Http\Controllers\QuizController');
+Route::get('quizzes/course/{id}', 'App\Http\Controllers\QuizController@getQuizByCourseId');
 Route::get('chapters/course/{id}', 'App\Http\Controllers\ChapterController@getExamByCourseId');
+Route::apiResource('question', 'App\Http\Controllers\QuestionController');
 Route::apiResource('examen', 'App\Http\Controllers\ExamController');
 Route::put('examen/{exam}', 'App\Http\Controllers\ExamController@update');
 

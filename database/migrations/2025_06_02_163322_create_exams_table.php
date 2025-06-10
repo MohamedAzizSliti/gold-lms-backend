@@ -24,6 +24,7 @@ return new class extends Migration
             $table->timestamp('start_date')->nullable();
             $table->timestamp('end_date')->nullable();
             $table->integer('max_attempts')->default(1);
+            $table->boolean('multi_chance')->nullable()->default(false);
 
             // Foreign keys
             $table->foreignId('course_id')->constrained('courses')->onDelete('cascade');
