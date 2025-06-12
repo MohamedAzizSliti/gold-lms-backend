@@ -445,5 +445,37 @@ class RoleSeeder extends Seeder
             'name' => 'RoleSeeder',
             'is_completed' => true
         ]);
+
+        $roles = [
+            [
+                'name' => 'Administrator',
+                'slug' => RoleEnum::ADMIN,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'name' => 'Teacher',
+                'slug' => RoleEnum::CONSUMER,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'name' => 'Vendor',
+                'slug' => RoleEnum::VENDOR,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'name' => 'Student',
+                'slug' => RoleEnum::DRIVER,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ];
+
+        // Use insertOrIgnore to prevent duplicate entries
+        foreach ($roles as $role) {
+            DB::table('roles')->insertOrIgnore($role);
+        }
     }
 }

@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\Exam;
 
 use App\Models\Product;
+use App\Repositories\Eloquents\CourseRepository;
 use App\Repositories\Eloquents\ExamRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -66,15 +67,15 @@ class ExamController extends Controller
      */
     public function getExamByCourseId($id)
     {
-       $product = Course::with(['exams'])->find($id);
-       // Ensure multi_chance is included in each exam
-       $exams = $product->exams->map(function($exam) {
-           return $exam->toArray();
-       });
-       return response()->json([
-           'course' => $product,
-           'exams' => $exams
-       ]);
+        $product = Course::with(['exams'])->find($id);
+        // Ensure multi_chance is included in each exam
+        $exams = $product->exams->map(function ($exam) {
+            return $exam->toArray();
+        });
+        return response()->json([
+            'course' => $product,
+            'exams' => $exams
+        ]);
     }
 
     public function create(Course $course)
@@ -85,34 +86,35 @@ class ExamController extends Controller
         ]);
     }
 
-    public function show($id){
+    public function show($id)
+    {
 
         $exam = Exam::with('questions')->find($id);
 
 
 
-        return response()->json(['exam'=>$exam]);
+        return response()->json(['exam' => $exam]);
     }
 
-    public function store(Request $request)
+    private function validateQuestionCount(Request $request)
     {
-        $exam = ExamRepository::storeByRequest($request);
-
-        // Check if the exam has at least 3 questions
-        $examWithQuestions = $exam->load('questions');
-        if ($examWithQuestions->questions->count() < 3) {
-            // Optionally, you could delete the exam if created without enough questions
-            // $exam->delete();
+        if (collect($request->questions)->count() < 3) {
             return response()->json([
                 'error' => 'An exam must have at least 3 questions.'
             ], 422);
         }
+        return null;
+    }
 
-        //        NotifyEvent::dispatch(NotificationTypeEnum::NewExamFromCourse, [
-        //            'course_id' => $exam->course_id
-        //        ]);
+    public function store(Request $request)
+    {
+        if ($error = $this->validateQuestionCount($request)) {
+            return $error;
+        }
 
-        return response()->json(['exam' => $examWithQuestions], 201);
+        $exam = ExamRepository::storeByRequest($request);
+
+        return response()->json(['exam' => $exam], 201);
     }
 
     public function edit(Exam $exam)
@@ -123,9 +125,13 @@ class ExamController extends Controller
         ]);
     }
 
-    public function update(Request $request,   $exam)
+    public function update(Request $request, $exam)
     {
-          $exam = Exam::find($exam);
+        if ($error = $this->validateQuestionCount($request)) {
+            return $error;
+        }
+
+        $exam = Exam::find($exam);
 
         ExamRepository::updateByRequest($request, $exam);
 

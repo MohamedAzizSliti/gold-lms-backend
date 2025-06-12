@@ -727,7 +727,7 @@ class Connection implements ConnectionInterface
                     is_int($value) => PDO::PARAM_INT,
                     is_resource($value) => PDO::PARAM_LOB,
                     default => PDO::PARAM_STR
-                },
+                }
             );
         }
     }

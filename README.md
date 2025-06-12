@@ -49,189 +49,271 @@ go to the root directory then tape : node app.js
 
 # API Documentation
 
-All endpoints are prefixed with `/api/` (e.g. `http://localhost:8000/api/`).
-
-## Authentication
-Some endpoints require authentication via Bearer Token (use `Authorization: Bearer <token>` in Postman).
+This document contains all the API routes available in the application and instructions for testing them using Postman.
 
 ---
 
-## User Authentication
-
-### Login
-- **POST** `/login`
-- **Body (JSON):**
-```json
-{
-  "email": "user@example.com",
-  "password": "your_password"
-}
-```
-
-### Register
-- **POST** `/register`
-- **Body (JSON):**
-```json
-{
-  "name": "John Doe",
-  "email": "user@example.com",
-  "password": "your_password",
-  "password_confirmation": "your_password"
-}
-```
+## Authentication Routes
+| Method | Endpoint          | Description               |
+|--------|-------------------|---------------------------|
+| POST   | `/login`          | Login a user             |
+| POST   | `/register`       | Register a new user      |
+| POST   | `/forgot-password`| Request password reset   |
+| POST   | `/verify-token`   | Verify reset token       |
+| POST   | `/update-password`| Update user password     |
+| POST   | `/logout`         | Logout the user          |
 
 ---
 
-## Courses
-
-### Get All Courses
-- **GET** `/course`
-
-### Get Course by ID
-- **GET** `/course/{id}`
-
-### Create Course (auth required)
-- **POST** `/course`
-- **Body (JSON):**
-```json
-{
-  "title": "Course Title",
-  "description": "Description",
-  ...
-}
-```
-
-### Update Course (auth required)
-- **PUT** `/course/{id}`
-- **Body (JSON):**
-```json
-{
-  "title": "Updated Title"
-}
-```
+## User Routes
+| Method | Endpoint                  | Description                       |
+|--------|---------------------------|-----------------------------------|
+| GET    | `/user`                   | Get user details                 |
+| POST   | `/user/csv/import`        | Import users via CSV             |
+| POST   | `/user/csv/export`        | Export users to CSV              |
+| POST   | `/user/deleteAll`         | Delete all users                 |
+| PUT    | `/user/{id}/{status}`     | Update user status               |
+| DELETE | `/user/address/{id}`      | Delete user address              |
+| POST   | `/user/save-player-id`    | Save player ID                   |
 
 ---
 
-## Exams
-
-### List Exams for a Course
-- **GET** `/exams/course/{course_id}`
-
-### Create Exam
-- **POST** `/examen`
-- **Body (JSON):**
-```json
-{
-  "course_id": 1,
-  "title": "Final Exam"
-}
-```
-
-### Get Exam by ID
-- **GET** `/examen/{id}`
-
-### Update Exam
-- **PUT** `/examen/{id}`
+## Course Routes
+| Method | Endpoint                  | Description                       |
+|--------|---------------------------|-----------------------------------|
+| GET    | `/course`                 | Get all courses                  |
+| GET    | `/course/{id}`            | Get course details               |
+| POST   | `/course`                 | Create a new course              |
+| PUT    | `/course/{id}`            | Update course details            |
+| POST   | `/course/csv/import`      | Import courses via CSV           |
+| POST   | `/course/csv/export`      | Export courses to CSV            |
+| POST   | `/course/replicate`       | Replicate a course               |
+| POST   | `/course/deleteAll`       | Delete all courses               |
+| PUT    | `/course/approve/{id}/{status}` | Approve or reject a course |
+| PUT    | `/course/{id}/{status}`   | Update course status             |
 
 ---
 
-## Quizzes
+## Testing the APIs in Postman
 
-### List Quizzes for a Course
-- **GET** `/quizzes/course/{course_id}`
+1. **Import the API Collection**:
+   - Open Postman.
+   - Click on "Import" in the top-left corner.
+   - Import the API collection file (you can create one manually or export it from your Laravel application).
 
-### Create Quiz
-- **POST** `/quiz`
-- **Body (JSON):**
-```json
-{
-  "course_id": 1,
-  "title": "Quiz 1"
-}
-```
+2. **Set Up Environment Variables**:
+   - Create a new environment in Postman.
+   - Add variables like `base_url` (e.g., `http://localhost:8000/api`) and `token` (for authentication).
 
-### Get Quiz by ID
-- **GET** `/quiz/{id}`
+3. **Testing Endpoints**:
+   - For endpoints requiring authentication, include the `Authorization` header with the Bearer token:
+     ```
+     Authorization: Bearer {{token}}
+     ```
+   - Replace placeholders in the URL (e.g., `{id}`) with actual values.
 
-### Update Quiz
-- **PUT** `/quiz/{id}`
+4. **Example Request**:
+   - **Endpoint**: `/login`
+   - **Method**: POST
+   - **Headers**:
+     ```
+     Content-Type: application/json
+     ```
+   - **Body** (JSON):
+     ```json
+     {
+       "email": "user@example.com",
+       "password": "password123"
+     }
+     ```
 
-### Delete Quiz
-- **DELETE** `/quiz/{id}`
-
----
-
-## Enrollment
-
-### Save Enrollment
-- **POST** `/save-enrollment`
-- **Body (JSON):**
-```json
-{
-  "user_id": 1,
-  "course_id": 2,
-  "course_price": 100
-}
-```
-
-### Update Enrollment Progress
-- **POST** `/enrolement/progress/update`
-- **Body (JSON):**
-```json
-{
-  "enrollmentId": 1,
-  "progress": 50
-}
-```
+5. **Save Responses**:
+   - Save successful responses in Postman for future reference.
 
 ---
 
-## Dashboard
+### **Roadmap for Creating a Course with Chapters, Quizzes, and Exams**
 
-### Get User Dashboard
-- **GET** `/dashboard-user/{id}`
-
----
-
-## Categories
-
-### List Categories
-- **GET** `/category`
-
----
-
-## Blog
-
-### List Blogs
-- **GET** `/blog`
-
-### Get Blog by Slug
-- **GET** `/blog/slug/{slug}`
-
----
-
-## Other Endpoints
-
-- **GET** `/current-courses/{id}`
-- **GET** `/settings`
-- **GET** `/settings-app-mobile`
-- **GET** `/themeOptions`
-- **GET** `/rollements-course/{id}/{idUser}`
-- **GET** `/page`
-- **GET** `/page/slug/{slug}`
-- **POST** `/contact-us`
-- **GET** `/front/review`
-
----
-
-## Example: Using Postman
-
-1. Set the request type (GET/POST/PUT/etc.).
-2. Set the URL, e.g. `http://localhost:8000/api/login`.
-3. For POST/PUT, select "Body" → "raw" → "JSON" and paste the example JSON.
-4. For protected routes, go to "Authorization" tab, select "Bearer Token" and paste your token.
+#### **Step 1: Create a Course**
+1. **Endpoint**: `/course`
+2. **Method**: `POST`
+3. **Headers**:
+   ```
+   Authorization: Bearer {{token}}
+   Content-Type: application/json
+   ```
+4. **Body** (JSON):
+   ```json
+   {
+     "title": "Introduction to Programming",
+     "description": "Learn the basics of programming.",
+     "slug": "introduction-to-programming",
+     "price": 100,
+     "sale_price": 80,
+     "level": "beginner",
+     "language": "en",
+     "duration": 120,
+     "requirements": "Basic computer knowledge",
+     "what_you_will_learn": "Understand programming fundamentals",
+     "is_featured": true,
+     "is_published": true,
+     "status": "published",
+     "max_students": 50,
+     "category_id": 1,
+     "user_id": 1, // Instructor ID
+     "media_id": 10, // Course image ID
+     "video_id": 20 // Intro video ID
+   }
+   ```
+5. **Response**: Note the `id` of the created course for the next steps.
 
 ---
 
-For more endpoints (orders, users, roles, etc.), see `routes/api.php`. Most resources follow RESTful conventions (index, show, store, update, destroy). Adjust request bodies as needed for your data model.
-"# gold-lms-backend" 
+#### **Step 2: Add Chapters to the Course**
+1. **Endpoint**: `/chapter`
+2. **Method**: `POST`
+3. **Headers**:
+   ```
+   Authorization: Bearer {{token}}
+   Content-Type: application/json
+   ```
+4. **Body** (JSON):
+   ```json
+   {
+     "course_id": 1, // Replace with the course ID
+     "title": "Chapter 1: Getting Started",
+     "serial_number": 1, // Order of the chapter
+     "contents": [
+       {
+         "title": "Introduction Video",
+         "type": "video",
+         "duration": 10 // Duration in minutes
+       },
+       {
+         "title": "Chapter Notes",
+         "type": "text",
+         "content": "Detailed notes for the chapter."
+       }
+     ]
+   }
+   ```
+5. **Response**: Note the `id` of the created chapter.
+
+---
+
+#### **Step 3: Create a Quiz for the Course**
+1. **Endpoint**: `  `
+2. **Method**: `POST`
+3. **Headers**:
+   ```
+   Authorization: Bearer {{token}}
+   Content-Type: application/json
+   ```
+4. **Body** (JSON):
+   ```json
+   {
+     "course_id": 1, // Replace with the course ID
+     "title": "Quiz 1: Basics of Programming",
+     "questions": [
+       {
+         "question": "What is a variable?",
+         "options": ["A constant value", "A storage location", "A function", "None of the above"],
+         "correct_option": 1
+       },
+       {
+         "question": "Which data type is used to store text?",
+         "options": ["int", "float", "string", "boolean"],
+         "correct_option": 2
+       }
+     ]
+   }
+   ```
+5. **Response**: Note the `id` of the created quiz.
+
+---
+
+#### **Step 4: Create an Exam for the Course**
+1. **Endpoint**: `/examen`
+2. **Method**: `POST`
+3. **Headers**:
+   ```
+   Authorization: Bearer {{token}}
+   Content-Type: application/json
+   ```
+4. **Body** (JSON):
+   ```json
+   {
+     "course_id": 1, // Replace with the course ID
+     "title": "Final Exam: Programming Basics",
+     "multi_chance": true, // Allow multiple attempts
+     "questions": [
+       {
+         "question": "Explain the difference between a variable and a constant.",
+         "type": "text"
+       },
+       {
+         "question": "Write a program to print 'Hello, World!' in Python.",
+         "type": "code"
+       }
+     ]
+   }
+   ```
+5. **Response**: Note the `id` of the created exam.
+
+---
+
+#### **Step 5: Enroll a User in the Course**
+1. **Endpoint**: `/save-enrollment`
+2. **Method**: `POST`
+3. **Headers**:
+   ```
+   Authorization: Bearer {{token}}
+   Content-Type: application/json
+   ```
+4. **Body** (JSON):
+   ```json
+   {
+     "user_id": 1, // Replace with the user ID
+     "course_id": 1 // Replace with the course ID
+   }
+   ```
+
+---
+
+#### **Step 6: Track Progress**
+1. **Endpoint**: `/enrolement/progress/update`
+2. **Method**: `POST`
+3. **Headers**:
+   ```
+   Authorization: Bearer {{token}}
+   Content-Type: application/json
+   ```
+4. **Body** (JSON):
+   ```json
+   {
+     "user_id": 1, // Replace with the user ID
+     "course_id": 1, // Replace with the course ID
+     "progress": 50 // Progress percentage
+   }
+   ```
+
+---
+
+#### **Step 7: Verify Results**
+- **Get Course Details**:
+  - **Endpoint**: `/course/{id}`
+  - **Method**: `GET`
+  - Replace `{id}` with the course ID.
+- **Get Quiz Details**:
+  - **Endpoint**: `/quiz/{id}`
+  - **Method**: `GET`
+  - Replace `{id}` with the quiz ID.
+- **Get Exam Details**:
+  - **Endpoint**: `/examen/{id}`
+  - **Method**: `GET`
+  - Replace `{id}` with the exam ID.
+
+---
+
+This roadmap provides a step-by-step guide to creating a course, adding chapters, quizzes, and exams, and testing them in Postman. Let me know if you need further clarifications or adjustments!
+"# gold-lms-backend"

@@ -23,8 +23,17 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('vendor_wallet_id')->references('id')->on('vendor_wallets')->onDelete('cascade');
-            $table->foreign('vendor_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('vendor_wallet_id')
+                ->references('id')
+                ->on('vendor_wallets')
+                ->onDelete('cascade')
+                ->onUpdate('cascade');
+
+            $table->foreign('vendor_id')
+                ->references('id')
+                ->on('users')
+                ->onDelete('cascade')
+                ->onUpdate('cascade');
         });
     }
 

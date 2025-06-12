@@ -160,9 +160,9 @@ class AuthController extends Controller
 
             if (Helpers::pointIsEnable()) {
                 $settings = Helpers::getSettings();
-              //  $signUpPoints = $settings['wallet_points']['signup_points'];
-              //  $this->creditPoints($user->id, $signUpPoints, WalletPointsDetail::SIGN_UP_BONUS);
-            //    event(new SignUpBonusPointsEvent($user));
+               //  $signUpPoints = $settings['wallet_points']['signup_points'];
+               //  $this->creditPoints($user->id, $signUpPoints, WalletPointsDetail::SIGN_UP_BONUS);
+               //   event(new SignUpBonusPointsEvent($user));
                 $user->point;
             }
 

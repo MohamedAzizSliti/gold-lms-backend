@@ -16,50 +16,21 @@ class QuestionRepository extends Repository
     {
         $options = [];
 
+        if (!isset($requestQuestion['question_type'])) {
+            throw new \InvalidArgumentException('The question_type key is missing in the request data.');
+        }
+
         switch ($requestQuestion['question_type']) {
             case QuestionTypeEnum::MULTIPLE_CHOICE->value:
-                $options = [
-                    'option_1' => [
-                        'text' => $requestQuestion['option_1']['text'],
-                        'is_correct' => isset($requestQuestion['option_1']['is_correct']) ? $requestQuestion['option_1']['is_correct'] : false
-                    ],
-                    'option_2' => [
-                        'text' => $requestQuestion['option_2']['text'],
-                        'is_correct' => isset($requestQuestion['option_2']['is_correct']) ? $requestQuestion['option_2']['is_correct'] : false
-                    ],
-                    'option_3' => [
-                        'text' => $requestQuestion['option_3']['text'],
-                        'is_correct' => isset($requestQuestion['option_3']['is_correct'])  ? $requestQuestion['option_3']['is_correct'] : false
-                    ],
-                    'option_4' => [
-                        'text' => $requestQuestion['option_4']['text'],
-                        'is_correct' => isset($requestQuestion['option_4']['is_correct']) ? $requestQuestion['option_4']['is_correct'] : false
-                    ]
-                ];
-                break;
             case QuestionTypeEnum::SINGLE_CHOICE->value:
-                $options = [
-                    'option_1' => [
-                        'text' => $requestQuestion['option_1']['text'],
-                        'is_correct' => false
-                    ],
-                    'option_2' => [
-                        'text' => $requestQuestion['option_2']['text'],
-                        'is_correct' => false
-                    ],
-                    'option_3' => [
-                        'text' => $requestQuestion['option_3']['text'] ?? null,
-                        'is_correct' => false
-                    ],
-                    'option_4' => [
-                        'text' => $requestQuestion['option_4']['text'] ?? null,
-                        'is_correct' => false
-                    ]
-                ];
-
-                $correctOption = $requestQuestion['correct_option'];
-                $options[$correctOption]['is_correct'] = true;
-
+                if (isset($requestQuestion['options']) && is_array($requestQuestion['options'])) {
+                    foreach ($requestQuestion['options'] as $index => $option) {
+                        $options['option_' . ($index + 1)] = [
+                            'text' => $option['text'],
+                            'is_correct' => $option['is_correct'] ?? false,
+                        ];
+                    }
+                }
                 break;
             case QuestionTypeEnum::BINARY->value:
                 $options = [

@@ -123,26 +123,23 @@ Route::post('/paypal/webhook', 'App\Http\Controllers\WebhookController@paypal')-
 
 
 // Authentication
-Route::post('/login', 'App\Http\Controllers\AuthController@login');
+Route::post('/login', 'App\Http\Controllers\AuthController@login')->name('login');
 Route::post('/register', 'App\Http\Controllers\AuthController@register');
 Route::post('/forgot-password', 'App\Http\Controllers\AuthController@forgotPassword');
 Route::post('/verify-token', 'App\Http\Controllers\AuthController@verifyToken');
 Route::post('/update-password', 'App\Http\Controllers\AuthController@updatePassword');
 
-// Courses
+// Courses - Public Routes
 Route::apiResource('course', 'App\Http\Controllers\CourseController',[
-  'only' => ['index', 'show','create'],
+  'only' => ['index', 'show'],
 ]);
-Route::get('create-course','App\Http\Controllers\CourseController@create');
-Route::post('update-course/{course}','App\Http\Controllers\CourseController@updateCourse');
 Route::get('course/slug/{slug}', 'App\Http\Controllers\ProductController@getProductBySlug');
+
+// Exams
+Route::apiResource('examen', 'App\Http\Controllers\ExamController', [
+  'only' => ['index', 'show'],
+]);
 Route::get('exams/course/{id}', 'App\Http\Controllers\ExamController@getExamByCourseId');
-Route::apiResource('quiz', 'App\Http\Controllers\QuizController');
-Route::get('quizzes/course/{id}', 'App\Http\Controllers\QuizController@getQuizByCourseId');
-Route::get('chapters/course/{id}', 'App\Http\Controllers\ChapterController@getExamByCourseId');
-Route::apiResource('question', 'App\Http\Controllers\QuestionController');
-Route::apiResource('examen', 'App\Http\Controllers\ExamController');
-Route::put('examen/{exam}', 'App\Http\Controllers\ExamController@update');
 
 // Categories
 Route::apiResource('category', 'App\Http\Controllers\CategoryController',[
@@ -294,6 +291,14 @@ Route::group(['middleware' => ['localization','auth:sanctum']], function () {
   Route::post('course/csv/import', 'App\Http\Controllers\CourseController@import');
   Route::put('course/approve/{id}/{status}', 'App\Http\Controllers\CourseController@approve');
   Route::post('course/deleteAll', 'App\Http\Controllers\CourseController@deleteAll');
+
+  // Exams
+  Route::apiResource('examen', 'App\Http\Controllers\ExamController', [
+    'only' => ['store', 'update', 'destroy', 'create'],
+  ]);
+  Route::post('examen/replicate', 'App\Http\Controllers\ExamController@replicate');
+  Route::put('examen/{id}/{status}', 'App\Http\Controllers\ExamController@status');
+  Route::post('examen/deleteAll', 'App\Http\Controllers\ExamController@deleteAll');
 
   // Attributes & Attribute Values
   Route::apiResource('attribute', 'App\Http\Controllers\AttributeController',[

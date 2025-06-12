@@ -31,10 +31,18 @@ class ChapterRepository extends Repository
             $isFree = false;
             $isForwardable = false;
 
-            $contentMedia = isset($requestContent['media']) ? MediaRepository::storeByRequest(
-                $requestContent['media'],
-                'course/chapter/content/media',
-                MediaTypeEnum::IMAGE
+            $contentMedia = isset($requestContent['media']) ? (
+                $requestContent['media'] instanceof \Illuminate\Http\UploadedFile
+                    ? MediaRepository::storeByRequest(
+                        $requestContent['media'],
+                        'course/chapter/content/media',
+                        MediaTypeEnum::IMAGE
+                    )
+                    : MediaRepository::storeByPath(
+                        $requestContent['media'],
+                        'course/chapter/content/media',
+                        MediaTypeEnum::IMAGE
+                    )
             ) : null;
 
             if (isset($requestContent['is_forwardable'])) {
@@ -232,6 +240,18 @@ class ChapterRepository extends Repository
 
     private static function getFileType($file)
     {
+        if (is_string($file)) {
+            $file = str_replace('storage/app/public/', '', $file);
+            $resolvedPath = realpath($file) ?: storage_path('app/public/' . ltrim($file, '/'));
+
+            if (!file_exists($resolvedPath)) {
+                \Log::error("File not found at resolved path: $resolvedPath");
+                throw new \Symfony\Component\HttpFoundation\File\Exception\FileNotFoundException("File not found at path: $resolvedPath");
+            }
+
+            $file = new \Illuminate\Http\UploadedFile($resolvedPath, basename($resolvedPath));
+        }
+
         switch ($file->getClientMimeType()) {
             case 'image/jpeg':
             case 'image/png':

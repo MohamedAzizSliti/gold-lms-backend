@@ -2,7 +2,7 @@
 
 namespace App\Repositories\Eloquents;
 
- use App\Models\Media;
+use App\Models\Media;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
@@ -36,11 +36,24 @@ class MediaRepository extends Repository
 
     public static function storeByPath($filePath, $path, $type = null): Media
     {
-        // Read the file content from the provided path
-        $fileContents = file_get_contents($filePath);
-        $fileName = basename($filePath); // Get the filename
+        $absoluteFilePath = realpath($filePath);
 
-        // Use Storage to put the file content into the specified directory
+        if (!$absoluteFilePath) {
+            $filePath = str_replace('storage/app/public/', '', $filePath);
+            $absoluteFilePath = storage_path('app/public/' . ltrim($filePath, '/'));
+        }
+
+        \Log::info("Attempting to store file by path: $filePath");
+        \Log::info("Resolved absolute path: $absoluteFilePath");
+
+        if (!file_exists($absoluteFilePath)) {
+            \Log::error("File not found at resolved path: $absoluteFilePath");
+            throw new \Symfony\Component\HttpFoundation\File\Exception\FileNotFoundException("File not found at path: $absoluteFilePath");
+        }
+
+        $fileContents = file_get_contents($absoluteFilePath);
+        $fileName = basename($absoluteFilePath);
+
         $src = Storage::put('/' . trim($path, '/') . '/' . $fileName, $fileContents, 'public');
 
         // Return a new Media record with the stored file details

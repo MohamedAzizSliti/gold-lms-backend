@@ -34,15 +34,28 @@ class CourseRepository extends Repository
             MediaTypeEnum::VIDEO
         ) : null;
 
+        // Generate slug from title or request, and ensure uniqueness
+        $slug = $request->slug ?? \Illuminate\Support\Str::slug($request->title);
+        $originalSlug = $slug;
+        $counter = 1;
+        while (Course::where('slug', $slug)->exists()) {
+            $slug = $originalSlug . '-' . $counter++;
+        }
+
+        // Use user_id from request as instructor_id (API compatibility)
+        $instructorId = $request->instructor_id ?? $request->user_id;
+
         $course = self::create([
             'category_id' => $request->category_id,
             'title' => $request->title,
+            'slug' => $slug,
             'media_id' => $media ? $media->id : null,
             'video_id' => $video ? $video->id : null,
             'description' =>  $request->description ,
             'regular_price' => $request->regular_price,
             'price' => $request->price,
-            'instructor_id' => $request->instructor_id,
+            'instructor_id' => $instructorId,
+            'user_id' => $request->user_id ?? $instructorId, // Always set user_id for DB
             'is_active' => $isActive,
             'published_at' => $request->is_active ? now() : null
         ]);
