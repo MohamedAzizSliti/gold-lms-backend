@@ -23,5 +23,6 @@ class DatabaseSeeder extends Seeder
         $this->call(HomePageSeeder::class);
         $this->call(ThemeOptionSeeder::class);
         $this->call(OrderStatusSeeder::class);
+        $this->call(TestDataSeeder::class);
     }
 }

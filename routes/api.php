@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
+use App\Http\Controllers\API\EnrollmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -433,4 +434,89 @@ Route::group(['middleware' => ['localization','auth:sanctum']], function () {
   // Settings
   Route::put('settings', 'App\Http\Controllers\SettingController@update')->middleware('can:setting.edit');
 
+});
+
+// Quizzes
+Route::apiResource('quiz', 'App\Http\Controllers\QuizController', [
+  'only' => ['index', 'show'],
+]);
+Route::get('quizzes/course/{id}', 'App\Http\Controllers\QuizController@getQuizByCourseId');
+
+// Protected Quiz routes
+Route::group(['middleware' => ['auth:sanctum']], function () {
+  Route::apiResource('quiz', 'App\Http\Controllers\QuizController', [
+    'only' => ['store', 'update', 'destroy'],
+  ]);
+});
+
+// Exams
+Route::apiResource('exam', 'App\Http\Controllers\API\ExamController', [
+  'only' => ['index', 'show'],
+]);
+Route::get('exams/course/{id}', 'App\Http\Controllers\API\ExamController@getExamByCourseId');
+
+// Protected Exam routes
+Route::group(['middleware' => ['auth:sanctum']], function () {
+  Route::apiResource('exam', 'App\Http\Controllers\API\ExamController', [
+    'only' => ['store', 'update', 'destroy'],
+  ]);
+  Route::post('exam/replicate', 'App\Http\Controllers\API\ExamController@replicate');
+});
+
+// Questions
+Route::apiResource('question', 'App\Http\Controllers\API\QuestionController', [
+  'only' => ['index', 'show'],
+]);
+
+// Protected Question routes
+Route::group(['middleware' => ['auth:sanctum']], function () {
+  Route::apiResource('question', 'App\Http\Controllers\API\QuestionController', [
+    'only' => ['store', 'update', 'destroy'],
+  ]);
+  Route::post('questions/bulk', 'App\Http\Controllers\API\QuestionController@bulkStore');
+});
+
+// Student Enrollment & Learning Routes
+Route::group(['middleware' => ['auth:sanctum']], function () {
+  // Enrollment
+  Route::post('courses/enroll', 'App\Http\Controllers\API\EnrollmentController@enroll');
+  Route::get('my-courses', 'App\Http\Controllers\API\EnrollmentController@myCourses');
+  Route::get('course/{id}/progress', 'App\Http\Controllers\API\EnrollmentController@courseProgress');
+  Route::get('course/{id}/content', 'App\Http\Controllers\API\EnrollmentController@courseContent');
+  Route::post('enrollment/{id}/cancel', 'App\Http\Controllers\API\EnrollmentController@cancel');
+  
+  // Quiz Sessions
+  Route::post('quiz/start', 'App\Http\Controllers\API\QuizSessionController@start');
+  Route::post('quiz/session/{id}/submit', 'App\Http\Controllers\API\QuizSessionController@submit');
+  Route::get('quiz/session/{id}/results', 'App\Http\Controllers\API\QuizSessionController@results');
+  Route::get('quiz/sessions', 'App\Http\Controllers\API\QuizSessionController@userSessions');
+  Route::get('quiz/{id}/sessions', 'App\Http\Controllers\API\QuizSessionController@quizSessions');
+  
+  // Exam Sessions
+  Route::post('exam/start', 'App\Http\Controllers\API\ExamSessionController@start');
+  Route::post('exam/session/{id}/submit', 'App\Http\Controllers\API\ExamSessionController@submit');
+  Route::get('exam/session/{id}/results', 'App\Http\Controllers\API\ExamSessionController@results');
+  Route::get('exam/sessions', 'App\Http\Controllers\API\ExamSessionController@userSessions');
+  Route::get('exam/{id}/sessions', 'App\Http\Controllers\API\ExamSessionController@examSessions');
+  
+  // Revenue & Financial Information
+  Route::get('instructor/revenues', 'App\Http\Controllers\API\RevenueController@instructorSummary');
+  Route::get('course/{id}/revenues', 'App\Http\Controllers\API\RevenueController@courseRevenues');
+  Route::get('charity/contributions', 'App\Http\Controllers\API\RevenueController@charityContributions');
+
+  // Get all completed quiz and exam results
+  Route::get('/completed-results', [EnrollmentController::class, 'completedResults']);
+});
+
+// Get user enrollments
+Route::middleware('auth:sanctum')->get('/enrollments', function (Request $request) {
+    $user = $request->user();
+    $enrollments = \App\Models\Enrollment::with(['course.media','course.category','course.instructor'])
+        ->where('user_id', $user->id)
+        ->get();
+
+    return response()->json([
+        'enrollments' => $enrollments,
+        'total' => $enrollments->count()
+    ]);
 });

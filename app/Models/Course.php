@@ -146,4 +146,21 @@ class Course extends Model
     {
         return $this->belongsToMany(User::class, 'user_course_progresses')->withPivot('progress', 'course_id');
     }
+
+    /**
+     * Get the revenues associated with this course through enrollments
+     */
+    public function revenues()
+    {
+        return $this->hasManyThrough(Revenue::class, Enrollment::class, 
+            'course_id', 'enrollment_id', 'id', 'id');
+    }
+    
+    /**
+     * Create revenue entry for this course
+     */
+    public function revenue()
+    {
+        return $this->hasMany(Revenue::class, 'course_id');
+    }
 }

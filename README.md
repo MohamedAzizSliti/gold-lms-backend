@@ -47,273 +47,690 @@ go to the root directory then tape : node app.js
  - pm2 logs
 
 
-# API Documentation
+# Gold LMS API Documentation
 
-This document contains all the API routes available in the application and instructions for testing them using Postman.
+This document provides the necessary information for integrating with the Gold LMS API.
 
----
+## Authentication
 
-## Authentication Routes
-| Method | Endpoint          | Description               |
-|--------|-------------------|---------------------------|
-| POST   | `/login`          | Login a user             |
-| POST   | `/register`       | Register a new user      |
-| POST   | `/forgot-password`| Request password reset   |
-| POST   | `/verify-token`   | Verify reset token       |
-| POST   | `/update-password`| Update user password     |
-| POST   | `/logout`         | Logout the user          |
+All API routes (except registration and login) require authentication using Laravel Sanctum.
 
----
+### Registration & Login
 
-## User Routes
-| Method | Endpoint                  | Description                       |
-|--------|---------------------------|-----------------------------------|
-| GET    | `/user`                   | Get user details                 |
-| POST   | `/user/csv/import`        | Import users via CSV             |
-| POST   | `/user/csv/export`        | Export users to CSV              |
-| POST   | `/user/deleteAll`         | Delete all users                 |
-| PUT    | `/user/{id}/{status}`     | Update user status               |
-| DELETE | `/user/address/{id}`      | Delete user address              |
-| POST   | `/user/save-player-id`    | Save player ID                   |
+**Register a new user**
+```
+POST /api/register
+```
+Parameters:
+- name (required): User's full name
+- email (required): User's email address
+- password (required): Password (min 8 chars)
+- password_confirmation (required): Confirm password
+- role (optional): User role (default: 'student')
 
----
+Response:
+```json
+{
+  "user": {
+    "id": 1,
+    "name": "John Doe",
+    "email": "john@example.com",
+    "role": "student",
+    "created_at": "2025-06-13T10:00:00.000000Z",
+    "updated_at": "2025-06-13T10:00:00.000000Z"
+  },
+  "token": "1|abcdefghijklmnopqrstuvwxyz123456"
+}
+```
 
-## Course Routes
-| Method | Endpoint                  | Description                       |
-|--------|---------------------------|-----------------------------------|
-| GET    | `/course`                 | Get all courses                  |
-| GET    | `/course/{id}`            | Get course details               |
-| POST   | `/course`                 | Create a new course              |
-| PUT    | `/course/{id}`            | Update course details            |
-| POST   | `/course/csv/import`      | Import courses via CSV           |
-| POST   | `/course/csv/export`      | Export courses to CSV            |
-| POST   | `/course/replicate`       | Replicate a course               |
-| POST   | `/course/deleteAll`       | Delete all courses               |
-| PUT    | `/course/approve/{id}/{status}` | Approve or reject a course |
-| PUT    | `/course/{id}/{status}`   | Update course status             |
+**Login**
+```
+POST /api/login
+```
+Parameters:
+- email (required): User's email
+- password (required): User's password
 
----
+Response:
+```json
+{
+  "user": {
+    "id": 1,
+    "name": "John Doe",
+    "email": "john@example.com",
+    "role": "student",
+    "created_at": "2025-06-13T10:00:00.000000Z",
+    "updated_at": "2025-06-13T10:00:00.000000Z"
+  },
+  "token": "1|abcdefghijklmnopqrstuvwxyz123456"
+}
+```
 
-## Testing the APIs in Postman
+**Logout**
+```
+POST /api/logout
+```
 
-1. **Import the API Collection**:
-   - Open Postman.
-   - Click on "Import" in the top-left corner.
-   - Import the API collection file (you can create one manually or export it from your Laravel application).
+Response:
+```json
+{
+  "message": "Successfully logged out"
+}
+```
 
-2. **Set Up Environment Variables**:
-   - Create a new environment in Postman.
-   - Add variables like `base_url` (e.g., `http://localhost:8000/api`) and `token` (for authentication).
+## Courses
 
-3. **Testing Endpoints**:
-   - For endpoints requiring authentication, include the `Authorization` header with the Bearer token:
-     ```
-     Authorization: Bearer {{token}}
-     ```
-   - Replace placeholders in the URL (e.g., `{id}`) with actual values.
+**List all courses**
+```
+GET /api/courses
+```
 
-4. **Example Request**:
-   - **Endpoint**: `/login`
-   - **Method**: POST
-   - **Headers**:
-     ```
-     Content-Type: application/json
-     ```
-   - **Body** (JSON):
-     ```json
-     {
-       "email": "user@example.com",
-       "password": "password123"
-     }
-     ```
+Response:
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "title": "Introduction to Laravel",
+      "description": "Learn the basics of Laravel",
+      "price": 49.99,
+      "thumbnail": "https://example.com/images/laravel-course.jpg",
+      "duration": 120,
+      "instructor": {
+        "id": 2,
+        "name": "Jane Smith"
+      },
+      "category": {
+        "id": 3,
+        "name": "Web Development"
+      },
+      "created_at": "2025-06-13T10:00:00.000000Z",
+      "updated_at": "2025-06-13T10:00:00.000000Z"
+    },
+    {...}
+  ],
+  "links": {...},
+  "meta": {...}
+}
+```
 
-5. **Save Responses**:
-   - Save successful responses in Postman for future reference.
+**Get course details**
+```
+GET /api/courses/{id}
+```
 
----
+Response:
+```json
+{
+  "data": {
+    "id": 1,
+    "title": "Introduction to Laravel",
+    "description": "Learn the basics of Laravel",
+    "price": 49.99,
+    "thumbnail": "https://example.com/images/laravel-course.jpg",
+    "duration": 120,
+    "instructor": {
+      "id": 2,
+      "name": "Jane Smith"
+    },
+    "category": {
+      "id": 3,
+      "name": "Web Development"
+    },
+    "chapters_count": 5,
+    "lessons_count": 25,
+    "quizzes_count": 3,
+    "exams_count": 1,
+    "students_count": 150,
+    "created_at": "2025-06-13T10:00:00.000000Z",
+    "updated_at": "2025-06-13T10:00:00.000000Z"
+  }
+}
+```
 
-### **Roadmap for Creating a Course with Chapters, Quizzes, and Exams**
+**Get full course structure**
+```
+GET /api/course/{id}/structure
+```
 
-#### **Step 1: Create a Course**
-1. **Endpoint**: `/course`
-2. **Method**: `POST`
-3. **Headers**:
-   ```
-   Authorization: Bearer {{token}}
-   Content-Type: application/json
-   ```
-4. **Body** (JSON):
-   ```json
-   {
-     "title": "Introduction to Programming",
-     "description": "Learn the basics of programming.",
-     "slug": "introduction-to-programming",
-     "price": 100,
-     "sale_price": 80,
-     "level": "beginner",
-     "language": "en",
-     "duration": 120,
-     "requirements": "Basic computer knowledge",
-     "what_you_will_learn": "Understand programming fundamentals",
-     "is_featured": true,
-     "is_published": true,
-     "status": "published",
-     "max_students": 50,
-     "category_id": 1,
-     "user_id": 1, // Instructor ID
-     "media_id": 10, // Course image ID
-     "video_id": 20 // Intro video ID
-   }
-   ```
-5. **Response**: Note the `id` of the created course for the next steps.
+Response:
+```json
+{
+  "course": {
+    "id": 1,
+    "title": "Introduction to Laravel",
+    "description": "Learn the basics of Laravel",
+    "price": 49.99,
+    "thumbnail": "https://example.com/images/laravel-course.jpg",
+    "duration": 120
+  },
+  "chapters": [
+    {
+      "id": 1,
+      "title": "Getting Started",
+      "position": 1,
+      "lessons": [
+        {
+          "id": 1,
+          "title": "Installation",
+          "content": "How to install Laravel",
+          "video_url": "https://example.com/videos/installation.mp4",
+          "duration": 15,
+          "position": 1
+        },
+        {...}
+      ]
+    },
+    {...}
+  ],
+  "quizzes": [
+    {
+      "id": 1,
+      "title": "Laravel Basics Quiz",
+      "description": "Test your knowledge of Laravel basics",
+      "time_limit": 15,
+      "pass_percentage": 70,
+      "position": 1,
+      "questions_count": 10
+    },
+    {...}
+  ],
+  "exams": [
+    {
+      "id": 1,
+      "title": "Laravel Final Exam",
+      "description": "Final assessment for Laravel course",
+      "time_limit": 60,
+      "pass_percentage": 75,
+      "position": 1,
+      "questions_count": 30
+    },
+    {...}
+  ]
+}
+```
 
----
+## Chapters and Lessons
 
-#### **Step 2: Add Chapters to the Course**
-1. **Endpoint**: `/chapter`
-2. **Method**: `POST`
-3. **Headers**:
-   ```
-   Authorization: Bearer {{token}}
-   Content-Type: application/json
-   ```
-4. **Body** (JSON):
-   ```json
-   {
-     "course_id": 1, // Replace with the course ID
-     "title": "Chapter 1: Getting Started",
-     "serial_number": 1, // Order of the chapter
-     "contents": [
-       {
-         "title": "Introduction Video",
-         "type": "video",
-         "duration": 10 // Duration in minutes
-       },
-       {
-         "title": "Chapter Notes",
-         "type": "text",
-         "content": "Detailed notes for the chapter."
-       }
-     ]
-   }
-   ```
-5. **Response**: Note the `id` of the created chapter.
+**List all chapters for a course**
+```
+GET /api/courses/{course_id}/chapters
+```
 
----
+Response:
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "title": "Getting Started",
+      "position": 1,
+      "lessons_count": 5,
+      "total_duration": 60
+    },
+    {...}
+  ]
+}
+```
 
-#### **Step 3: Create a Quiz for the Course**
-1. **Endpoint**: `  `
-2. **Method**: `POST`
-3. **Headers**:
-   ```
-   Authorization: Bearer {{token}}
-   Content-Type: application/json
-   ```
-4. **Body** (JSON):
-   ```json
-   {
-     "course_id": 1, // Replace with the course ID
-     "title": "Quiz 1: Basics of Programming",
-     "questions": [
-       {
-         "question": "What is a variable?",
-         "options": ["A constant value", "A storage location", "A function", "None of the above"],
-         "correct_option": 1
-       },
-       {
-         "question": "Which data type is used to store text?",
-         "options": ["int", "float", "string", "boolean"],
-         "correct_option": 2
-       }
-     ]
-   }
-   ```
-5. **Response**: Note the `id` of the created quiz.
+**Get chapter details**
+```
+GET /api/chapters/{id}
+```
 
----
+Response:
+```json
+{
+  "data": {
+    "id": 1,
+    "title": "Getting Started",
+    "position": 1,
+    "lessons": [
+      {
+        "id": 1,
+        "title": "Installation",
+        "content": "How to install Laravel",
+        "video_url": "https://example.com/videos/installation.mp4",
+        "duration": 15,
+        "position": 1
+      },
+      {...}
+    ]
+  }
+}
+```
 
-#### **Step 4: Create an Exam for the Course**
-1. **Endpoint**: `/examen`
-2. **Method**: `POST`
-3. **Headers**:
-   ```
-   Authorization: Bearer {{token}}
-   Content-Type: application/json
-   ```
-4. **Body** (JSON):
-   ```json
-   {
-     "course_id": 1, // Replace with the course ID
-     "title": "Final Exam: Programming Basics",
-     "multi_chance": true, // Allow multiple attempts
-     "questions": [
-       {
-         "question": "Explain the difference between a variable and a constant.",
-         "type": "text"
-       },
-       {
-         "question": "Write a program to print 'Hello, World!' in Python.",
-         "type": "code"
-       }
-     ]
-   }
-   ```
-5. **Response**: Note the `id` of the created exam.
+**Get lesson details**
+```
+GET /api/lessons/{id}
+```
 
----
+Response:
+```json
+{
+  "data": {
+    "id": 1,
+    "title": "Installation",
+    "content": "How to install Laravel...",
+    "video_url": "https://example.com/videos/installation.mp4",
+    "duration": 15,
+    "position": 1,
+    "chapter_id": 1,
+    "course_id": 1
+  }
+}
+```
 
-#### **Step 5: Enroll a User in the Course**
-1. **Endpoint**: `/save-enrollment`
-2. **Method**: `POST`
-3. **Headers**:
-   ```
-   Authorization: Bearer {{token}}
-   Content-Type: application/json
-   ```
-4. **Body** (JSON):
-   ```json
-   {
-     "user_id": 1, // Replace with the user ID
-     "course_id": 1 // Replace with the course ID
-   }
-   ```
+## Quizzes and Exams
 
----
+**Get quiz details**
+```
+GET /api/quizzes/{id}
+```
 
-#### **Step 6: Track Progress**
-1. **Endpoint**: `/enrolement/progress/update`
-2. **Method**: `POST`
-3. **Headers**:
-   ```
-   Authorization: Bearer {{token}}
-   Content-Type: application/json
-   ```
-4. **Body** (JSON):
-   ```json
-   {
-     "user_id": 1, // Replace with the user ID
-     "course_id": 1, // Replace with the course ID
-     "progress": 50 // Progress percentage
-   }
-   ```
+Response:
+```json
+{
+  "data": {
+    "id": 1,
+    "title": "Laravel Basics Quiz",
+    "description": "Test your knowledge of Laravel basics",
+    "time_limit": 15,
+    "pass_percentage": 70,
+    "position": 1,
+    "course_id": 1,
+    "questions": [
+      {
+        "id": 1,
+        "question_text": "What command creates a new Laravel project?",
+        "type": "multiple_choice",
+        "options": [
+          {"option_1": "laravel new"},
+          {"option_2": "new laravel"},
+          {"option_3": "create laravel"},
+          {"option_4": "php laravel"}
+        ],
+        "points": 1
+      },
+      {...}
+    ]
+  }
+}
+```
 
----
+**Get exam details**
+```
+GET /api/exams/{id}
+```
 
-#### **Step 7: Verify Results**
-- **Get Course Details**:
-  - **Endpoint**: `/course/{id}`
-  - **Method**: `GET`
-  - Replace `{id}` with the course ID.
-- **Get Quiz Details**:
-  - **Endpoint**: `/quiz/{id}`
-  - **Method**: `GET`
-  - Replace `{id}` with the quiz ID.
-- **Get Exam Details**:
-  - **Endpoint**: `/examen/{id}`
-  - **Method**: `GET`
-  - Replace `{id}` with the exam ID.
+Response:
+```json
+{
+  "data": {
+    "id": 1,
+    "title": "Laravel Final Exam",
+    "description": "Final assessment for Laravel course",
+    "time_limit": 60,
+    "pass_percentage": 75,
+    "position": 1,
+    "course_id": 1,
+    "questions": [
+      {
+        "id": 50,
+        "question_text": "Explain how middleware works in Laravel",
+        "type": "short_answer",
+        "points": 5
+      },
+      {...}
+    ]
+  }
+}
+```
 
----
+## Taking Quizzes and Exams
 
-This roadmap provides a step-by-step guide to creating a course, adding chapters, quizzes, and exams, and testing them in Postman. Let me know if you need further clarifications or adjustments!
+**Start a quiz**
+```
+POST /api/quizzes/{quiz_id}/start
+```
+
+Response:
+```json
+{
+  "session": {
+    "id": 1,
+    "quiz_id": 1,
+    "user_id": 1,
+    "enrollment_id": 5,
+    "status": "in_progress",
+    "started_at": "2025-06-13T15:30:00.000000Z",
+    "time_limit": 15,
+    "expires_at": "2025-06-13T15:45:00.000000Z"
+  },
+  "questions": [
+    {
+      "id": 1,
+      "question_text": "What command creates a new Laravel project?",
+      "type": "multiple_choice",
+      "options": [
+        {"option_1": "laravel new"},
+        {"option_2": "new laravel"},
+        {"option_3": "create laravel"},
+        {"option_4": "php laravel"}
+      ],
+      "points": 1
+    },
+    {...}
+  ]
+}
+```
+
+**Submit quiz answer**
+```
+POST /api/quiz-sessions/{session_id}/answer
+```
+Parameters:
+- question_id (required): Question ID
+- answer (required): User's answer
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Answer submitted",
+  "remaining_questions": 9
+}
+```
+
+**Complete quiz session**
+```
+POST /api/quiz-sessions/{session_id}/submit
+```
+
+Response:
+```json
+{
+  "success": true,
+  "score": 80,
+  "correct_answers": 8,
+  "wrong_answers": 2,
+  "total_questions": 10,
+  "passed": true,
+  "pass_percentage": 70
+}
+```
+
+**Start an exam**
+```
+POST /api/exams/{exam_id}/start
+```
+
+Response:
+```json
+{
+  "session": {
+    "id": 1,
+    "exam_id": 1,
+    "user_id": 1,
+    "enrollment_id": 5,
+    "status": "in_progress",
+    "started_at": "2025-06-13T16:00:00.000000Z",
+    "time_limit": 60,
+    "expires_at": "2025-06-13T17:00:00.000000Z"
+  },
+  "questions": [
+    {
+      "id": 50,
+      "question_text": "Explain how middleware works in Laravel",
+      "type": "short_answer",
+      "points": 5
+    },
+    {...}
+  ]
+}
+```
+
+**Submit exam answer**
+```
+POST /api/exam-sessions/{session_id}/answer
+```
+Parameters:
+- question_id (required): Question ID
+- answer (required): User's answer
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Answer submitted",
+  "remaining_questions": 29
+}
+```
+
+**Complete exam session**
+```
+POST /api/exam-sessions/{session_id}/submit
+```
+
+Response:
+```json
+{
+  "success": true,
+  "score": 85,
+  "correct_answers": 26,
+  "wrong_answers": 4,
+  "total_questions": 30,
+  "passed": true,
+  "pass_percentage": 75
+}
+```
+
+## Enrollments
+
+**Enroll in a course**
+```
+POST /api/courses/{course_id}/enroll
+```
+Parameters:
+- payment_id (optional): Payment reference ID
+- payment_method (optional): Payment method used
+
+Response:
+```json
+{
+  "success": true,
+  "enrollment": {
+    "id": 5,
+    "user_id": 1,
+    "course_id": 1,
+    "status": "active",
+    "enrollment_date": "2025-06-13T10:30:00.000000Z",
+    "payment_id": "pay_123456",
+    "payment_method": "credit_card"
+  },
+  "revenue": {
+    "total_amount": 49.99,
+    "instructor_amount": 48.49, 
+    "platform_fee": 0,
+    "charity_amount": 1.50
+  }
+}
+```
+
+**Get all enrolled courses for current user**
+```
+GET /api/enrollments
+```
+
+Response:
+```json
+{
+  "data": [
+    {
+      "id": 5,
+      "course": {
+        "id": 1,
+        "title": "Introduction to Laravel",
+        "thumbnail": "https://example.com/images/laravel-course.jpg"
+      },
+      "enrollment_date": "2025-06-13T10:30:00.000000Z",
+      "progress": 35,
+      "status": "active"
+    },
+    {...}
+  ]
+}
+```
+
+## Progress and Results
+
+**Get completed quiz and exam results**
+```
+GET /api/completed-results
+```
+
+Response:
+```json
+{
+  "results": [
+    {
+      "type": "quiz",
+      "id": 1,
+      "session_id": 1,
+      "title": "Laravel Basics Quiz",
+      "course": "Introduction to Laravel",
+      "course_id": 1,
+      "quiz_id": 1,
+      "score": 80,
+      "correct_answers": 8,
+      "wrong_answers": 2,
+      "total_questions": 10,
+      "passed": true,
+      "completed_at": "2025-06-13T15:45:00.000000Z"
+    },
+    {
+      "type": "exam",
+      "id": 1,
+      "session_id": 1,
+      "title": "Laravel Final Exam",
+      "course": "Introduction to Laravel",
+      "course_id": 1,
+      "exam_id": 1,
+      "score": 85,
+      "pass_percentage": 75,
+      "correct_answers": 26,
+      "wrong_answers": 4,
+      "total_questions": 30,
+      "passed": true,
+      "completed_at": "2025-06-13T17:00:00.000000Z"
+    },
+    {...}
+  ],
+  "stats": {
+    "total": 2,
+    "exams_count": 1,
+    "quizzes_count": 1,
+    "passed_count": 2,
+    "failed_count": 0
+  }
+}
+```
+
+**Get course progress**
+```
+GET /api/enrolled/course/{course_id}/progress
+```
+
+Response:
+```json
+{
+  "overall_progress": 35,
+  "completed": {
+    "lessons": 8,
+    "quizzes": 1,
+    "exams": 0
+  },
+  "remaining": {
+    "lessons": 17,
+    "quizzes": 2,
+    "exams": 1
+  },
+  "total": {
+    "lessons": 25,
+    "quizzes": 3,
+    "exams": 1
+  }
+}
+```
+
+## Revenues and Payments
+
+**Get instructor revenues**
+```
+GET /api/instructor/revenues
+```
+
+Response:
+```json
+{
+  "total_revenue": 4849.00,
+  "charity_contributions": 150.00,
+  "courses": [
+    {
+      "id": 1,
+      "title": "Introduction to Laravel",
+      "enrollments": 100,
+      "revenue": 4849.00,
+      "charity": 150.00
+    },
+    {...}
+  ]
+}
+```
+
+**Get charity contributions**
+```
+GET /api/charity/contributions
+```
+
+Response:
+```json
+{
+  "total_contributions": 150.00,
+  "contributions": [
+    {
+      "id": 1,
+      "course_id": 1,
+      "course_title": "Introduction to Laravel",
+      "amount": 1.50,
+      "date": "2025-06-13T10:30:00.000000Z"
+    },
+    {...}
+  ]
+}
+```
+
+## Error Responses
+
+All API errors follow this format:
+```json
+{
+  "message": "Error message description",
+  "errors": {
+    "field_name": [
+      "Error message for this field"
+    ]
+  }
+}
+```
+
+Standard HTTP status codes are used:
+- 200: Success
+- 201: Created
+- 400: Bad Request
+- 401: Unauthorized
+- 403: Forbidden
+- 404: Not Found
+- 422: Validation Error
+- 500: Server Error
 "# gold-lms-backend"
