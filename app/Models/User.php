@@ -269,6 +269,23 @@ class User extends Authenticatable implements HasMedia
         return $this->hasMany(Enrollment::class);
     }
 
+    /**
+     * Chat relationships
+     */
+    public function conversations()
+    {
+        return $this->belongsToMany(Conversation::class, 'conversation_participants')
+                    ->withPivot('joined_at', 'last_read_at')
+                    ->withTimestamps();
+    }
 
+    public function messages(): HasMany
+    {
+        return $this->hasMany(Message::class);
+    }
 
+    public function sentMessages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'user_id');
+    }
 }

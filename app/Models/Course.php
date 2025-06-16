@@ -14,8 +14,35 @@ use Illuminate\Support\Facades\Storage;
 class Course extends Model
 {
     protected $guarded = ['id'];
-    protected $appends = ['media_path','video_path','total_duration' ];
+    protected $appends = ['media_path','video_path','total_duration','cover_image'];
 
+    protected $fillable = [
+        'title',
+        'description',
+        'slug',
+        'price',
+        'sale_price',
+        'level',
+        'language',
+        'duration',
+        'requirements',
+        'what_you_will_learn',
+        'is_featured',
+        'is_published',
+        'status',
+        'max_students',
+        'rating',
+        'total_reviews',
+        'total_enrollments',
+        'category_id',
+        'user_id',
+        'media_id',
+        'video_id',
+        'meta_title',
+        'meta_description',
+        'meta_keywords',
+        'cover_image'
+    ];
 
     // Accessor pour la durée totale
     public function totalDuration(): Attribute
@@ -38,14 +65,13 @@ class Course extends Model
 
     public function instructor(): BelongsTo
     {
-        return $this->belongsTo(User::class) ;
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function chapters(): HasMany
     {
         return $this->hasMany(Chapter::class);
     }
-
 
     public function enrollments(): HasMany
     {
@@ -54,20 +80,69 @@ class Course extends Model
 
     public function media(): BelongsTo
     {
-        return $this->belongsTo(Media::class);
+        return $this->belongsTo(Attachment::class, 'media_id');
     }
 
     public function mediaPath(): Attribute
     {
-        $media =  null;
-
-        if ($this->media && Storage::disk('public')->exists($this->media->src)) {
-            $media = url('admin'.Storage::url($this->media->src));
-            $media = ['original_url' => $media];
-        }
-
         return Attribute::make(
-            get: fn() => $media,
+            get: function () {
+                if (!$this->media_id || !$this->media) {
+                    return null;
+                }
+                
+                $media = null;
+                $baseUrl = request()->getSchemeAndHttpHost();
+                
+                // First try to use original_url if it exists
+                if ($this->media->original_url) {
+                    $media = ['original_url' => $this->media->original_url];
+                } 
+                // Then try to construct URL from file_name
+                elseif ($this->media->file_name) {
+                    $filename = basename($this->media->file_name);
+                    $media = ['original_url' => $baseUrl . '/admin/api/files/course-covers/' . $filename];
+                }
+                // Finally try to use src field
+                elseif ($this->media->src && Storage::disk('public')->exists($this->media->src)) {
+                    $mediaUrl = $baseUrl . '/admin' . Storage::url($this->media->src);
+                    $media = ['original_url' => $mediaUrl];
+                }
+                
+                return $media;
+            }
+        );
+    }
+
+    public function coverImage(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                // First, check if we have a direct cover_image path
+                if (!empty($this->cover_image)) {
+                    $baseUrl = request()->getSchemeAndHttpHost();
+                    return [
+                        'url' => $baseUrl . $this->cover_image,
+                        'path' => $this->cover_image,
+                        'source' => 'direct'
+                    ];
+                }
+                
+                // Fallback to media_id approach for backward compatibility
+                if ($this->media_id && $this->media) {
+                    $baseUrl = request()->getSchemeAndHttpHost();
+                    $filename = basename($this->media->file_name ?? '');
+                    return [
+                        'id' => $this->media_id,
+                        'url' => $baseUrl . '/admin/api/files/course-covers/' . $filename,
+                        'name' => $this->media->name ?? '',
+                        'file_name' => $this->media->file_name ?? '',
+                        'source' => 'media'
+                    ];
+                }
+                
+                return null;
+            }
         );
     }
 

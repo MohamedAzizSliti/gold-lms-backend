@@ -8,6 +8,8 @@ use App\Models\Enrollment;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class EnrollmentController extends Controller
 {
@@ -413,6 +415,235 @@ class EnrollmentController extends Controller
                 'passed_count' => $results->where('passed', true)->count(),
                 'failed_count' => $results->where('passed', false)->count(),
             ]
+        ]);
+    }
+
+    /**
+     * Admin: Get all enrollments with filtering and pagination
+     */
+    public function adminIndex(Request $request)
+    {
+        $query = Enrollment::with(['user', 'course', 'coupon'])
+            ->orderBy('created_at', 'desc');
+
+        // Apply filters
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->has('course_id')) {
+            $query->where('course_id', $request->course_id);
+        }
+
+        if ($request->has('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        if ($request->has('date_from')) {
+            $query->whereDate('enrollment_date', '>=', $request->date_from);
+        }
+
+        if ($request->has('date_to')) {
+            $query->whereDate('enrollment_date', '<=', $request->date_to);
+        }
+
+        // Search functionality
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->whereHas('user', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            })->orWhereHas('course', function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%");
+            });
+        }
+
+        $perPage = $request->get('per_page', 15);
+        $enrollments = $query->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'data' => $enrollments->items(),
+            'pagination' => [
+                'current_page' => $enrollments->currentPage(),
+                'last_page' => $enrollments->lastPage(),
+                'per_page' => $enrollments->perPage(),
+                'total' => $enrollments->total(),
+            ]
+        ]);
+    }
+
+    /**
+     * Admin: Get enrollment statistics
+     */
+    public function adminStatistics(Request $request)
+    {
+        $startDate = $request->start_date ? Carbon::parse($request->start_date) : Carbon::now()->subMonth();
+        $endDate = $request->end_date ? Carbon::parse($request->end_date) : Carbon::now();
+
+        // Total enrollments
+        $totalEnrollments = Enrollment::whereBetween('enrollment_date', [$startDate, $endDate])->count();
+        
+        // Active enrollments
+        $activeEnrollments = Enrollment::where('status', 'active')
+            ->whereBetween('enrollment_date', [$startDate, $endDate])
+            ->count();
+        
+        // Pending enrollments
+        $pendingEnrollments = Enrollment::where('status', 'pending')
+            ->whereBetween('enrollment_date', [$startDate, $endDate])
+            ->count();
+        
+        // Cancelled enrollments
+        $cancelledEnrollments = Enrollment::where('status', 'cancelled')
+            ->whereBetween('enrollment_date', [$startDate, $endDate])
+            ->count();
+
+        // Total revenue from enrollments
+        $totalRevenue = Enrollment::whereBetween('enrollment_date', [$startDate, $endDate])
+            ->where('status', 'active')
+            ->sum('amount_paid');
+
+        // Average enrollment per day
+        $daysDiff = $startDate->diffInDays($endDate) + 1;
+        $avgEnrollmentsPerDay = $totalEnrollments / $daysDiff;
+
+        // Top courses by enrollment
+        $topCourses = Enrollment::select('course_id', DB::raw('COUNT(*) as enrollment_count'))
+            ->with('course:id,title,price')
+            ->whereBetween('enrollment_date', [$startDate, $endDate])
+            ->groupBy('course_id')
+            ->orderBy('enrollment_count', 'desc')
+            ->limit(5)
+            ->get();
+
+        // Monthly breakdown
+        $monthlyBreakdown = Enrollment::select(
+                DB::raw('YEAR(enrollment_date) as year'),
+                DB::raw('MONTH(enrollment_date) as month'),
+                DB::raw('COUNT(*) as count'),
+                DB::raw('SUM(amount_paid) as revenue')
+            )
+            ->whereBetween('enrollment_date', [$startDate, $endDate])
+            ->groupBy('year', 'month')
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'period' => [
+                    'start_date' => $startDate->format('Y-m-d'),
+                    'end_date' => $endDate->format('Y-m-d'),
+                ],
+                'summary' => [
+                    'total_enrollments' => $totalEnrollments,
+                    'active_enrollments' => $activeEnrollments,
+                    'pending_enrollments' => $pendingEnrollments,
+                    'cancelled_enrollments' => $cancelledEnrollments,
+                    'total_revenue' => $totalRevenue,
+                    'avg_enrollments_per_day' => round($avgEnrollmentsPerDay, 2),
+                ],
+                'top_courses' => $topCourses,
+                'monthly_breakdown' => $monthlyBreakdown,
+            ]
+        ]);
+    }
+
+    /**
+     * Admin: Get revenue summary from enrollments
+     */
+    public function revenueSummary(Request $request)
+    {
+        $startDate = $request->start_date ? Carbon::parse($request->start_date) : Carbon::now()->subMonth();
+        $endDate = $request->end_date ? Carbon::parse($request->end_date) : Carbon::now();
+
+        // Total revenue
+        $totalRevenue = Enrollment::where('status', 'active')
+            ->whereBetween('enrollment_date', [$startDate, $endDate])
+            ->sum('amount_paid');
+
+        // Calculate 3% for charity donations
+        $charityAmount = $totalRevenue * 0.03;
+
+        // Platform fee (assuming 5%)
+        $platformFee = $totalRevenue * 0.05;
+
+        // Instructor earnings (remaining amount)
+        $instructorEarnings = $totalRevenue - $charityAmount - $platformFee;
+
+        // Revenue by payment method
+        $revenueByPaymentMethod = Enrollment::select('payment_method', DB::raw('SUM(amount_paid) as total'))
+            ->where('status', 'active')
+            ->whereBetween('enrollment_date', [$startDate, $endDate])
+            ->groupBy('payment_method')
+            ->get();
+
+        // Daily revenue trend
+        $dailyRevenue = Enrollment::select(
+                DB::raw('DATE(enrollment_date) as date'),
+                DB::raw('SUM(amount_paid) as revenue'),
+                DB::raw('COUNT(*) as enrollments')
+            )
+            ->where('status', 'active')
+            ->whereBetween('enrollment_date', [$startDate, $endDate])
+            ->groupBy('date')
+            ->orderBy('date', 'asc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'period' => [
+                    'start_date' => $startDate->format('Y-m-d'),
+                    'end_date' => $endDate->format('Y-m-d'),
+                ],
+                'summary' => [
+                    'total_revenue' => $totalRevenue,
+                    'charity_amount' => $charityAmount,
+                    'platform_fee' => $platformFee,
+                    'instructor_earnings' => $instructorEarnings,
+                    'charity_percentage' => 3,
+                    'platform_percentage' => 5,
+                ],
+                'revenue_by_payment_method' => $revenueByPaymentMethod,
+                'daily_revenue' => $dailyRevenue,
+            ]
+        ]);
+    }
+
+    /**
+     * Admin: Get specific enrollment details
+     */
+    public function adminShow($id)
+    {
+        $enrollment = Enrollment::with(['user', 'course', 'coupon', 'transactions'])
+            ->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $enrollment
+        ]);
+    }
+
+    /**
+     * Admin: Update enrollment status
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:pending,active,cancelled,completed'
+        ]);
+
+        $enrollment = Enrollment::findOrFail($id);
+        $enrollment->status = $request->status;
+        $enrollment->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Enrollment status updated successfully',
+            'data' => $enrollment
         ]);
     }
 }

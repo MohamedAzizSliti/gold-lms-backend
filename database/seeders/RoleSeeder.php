@@ -154,7 +154,56 @@ class RoleSeeder extends Seeder
                 ],
                 'roles' => [
                     RoleEnum::ADMIN => ['index', 'create', 'destroy'],
-                    RoleEnum::VENDOR => ['index', 'create','destroy']
+                    RoleEnum::VENDOR => ['index', 'create','destroy'],
+                    RoleEnum::TEACHER => ['index', 'create', 'destroy']
+                ]
+            ],
+            'courses' => [
+                'actions' => [
+                    'index'   => 'course.index',
+                    'create'  => 'course.create',
+                    'edit'    => 'course.edit',
+                    'destroy' => 'course.destroy'
+                ],
+                'roles' => [
+                    RoleEnum::ADMIN => ['index', 'create', 'edit', 'destroy'],
+                    RoleEnum::TEACHER => ['index', 'create', 'edit', 'destroy']
+                ]
+            ],
+            'chapters' => [
+                'actions' => [
+                    'index'   => 'chapter.index',
+                    'create'  => 'chapter.create',
+                    'edit'    => 'chapter.edit',
+                    'destroy' => 'chapter.destroy'
+                ],
+                'roles' => [
+                    RoleEnum::ADMIN => ['index', 'create', 'edit', 'destroy'],
+                    RoleEnum::TEACHER => ['index', 'create', 'edit', 'destroy']
+                ]
+            ],
+            'quizzes' => [
+                'actions' => [
+                    'index'   => 'quiz.index',
+                    'create'  => 'quiz.create',
+                    'edit'    => 'quiz.edit',
+                    'destroy' => 'quiz.destroy'
+                ],
+                'roles' => [
+                    RoleEnum::ADMIN => ['index', 'create', 'edit', 'destroy'],
+                    RoleEnum::TEACHER => ['index', 'create', 'edit', 'destroy']
+                ]
+            ],
+            'exams' => [
+                'actions' => [
+                    'index'   => 'exam.index',
+                    'create'  => 'exam.create',
+                    'edit'    => 'exam.edit',
+                    'destroy' => 'exam.destroy'
+                ],
+                'roles' => [
+                    RoleEnum::ADMIN => ['index', 'create', 'edit', 'destroy'],
+                    RoleEnum::TEACHER => ['index', 'create', 'edit', 'destroy']
                 ]
             ],
             'blogs' => [
@@ -250,12 +299,13 @@ class RoleSeeder extends Seeder
                 'actions' => [
                     'index' => 'refund.index',
                     'create' => 'refund.create',
-                    'action' => 'refund.action',
+                    'edit' => 'refund.edit',
+                    'destroy' => 'refund.destroy',
                 ],
                 'roles' => [
-                    RoleEnum::ADMIN => ['index','create', 'action'],
-                    RoleEnum::VENDOR => ['index', 'action'],
-                    RoleEnum::CONSUMER => ['index','create'],
+                    RoleEnum::ADMIN => ['index','create', 'edit', 'destroy'],
+                    RoleEnum::VENDOR => ['index', 'create', 'edit'],
+                    RoleEnum::CONSUMER => ['index','create', 'edit'],
                 ]
             ],
             'reviews' => [
@@ -329,6 +379,8 @@ class RoleSeeder extends Seeder
 
         $sequence = 0;
         $vendorPermissions = [];
+        $consumerPermissions = [];
+        $teacherPermissions = [];
         foreach ($modules as $key => $value) {
             $module = Module::updateOrCreate(['name' => $key, 'sequence' => ++$sequence]);
             foreach ($value['actions'] as $action => $permission) {
@@ -353,17 +405,25 @@ class RoleSeeder extends Seeder
                             $consumerPermissions[] = $permission;
                         }
                     }
+
+                    if ($role == RoleEnum::TEACHER) {
+                        if (in_array($action, $allowed_actions)) {
+                            $teacherPermissions[] = $permission;
+                        }
+                    }
                 }
             }
         }
 
         $request = app('request')->all();
-        $adminRole = Role::create([
+        $adminRole = Role::firstOrCreate([
             'name' => RoleEnum::ADMIN,
+            'guard_name' => 'web'
+        ], [
             'system_reserve' => true
         ]);
 
-        $adminRole->givePermissionTo(Permission::all());
+        $adminRole->syncPermissions(Permission::all());
         if (isset($request['admin']) &&  true) {
             $admin = User::factory()->create([
                 'name' => $request['admin']['first_name'].''.$request['admin']['last_name'] ?? RoleEnum::ADMIN,
@@ -385,12 +445,14 @@ class RoleSeeder extends Seeder
         }
 
         $admin->assignRole($adminRole);
-        $consumerRole = Role::create([
+        $consumerRole = Role::firstOrCreate([
             'name' => RoleEnum::CONSUMER,
+            'guard_name' => 'web'
+        ], [
             'system_reserve' => true
         ]);
 
-        $consumerRole->givePermissionTo($consumerPermissions);
+        $consumerRole->syncPermissions($consumerPermissions);
         $consumer = User::factory()->create([
             'name' => 'john due',
             'email' => 'john.customer@example.com',
@@ -402,8 +464,10 @@ class RoleSeeder extends Seeder
         $consumer->assignRole($consumerRole);
         $consumer->wallet()->create();
 
-        $vendorRole = Role::create([
+        $vendorRole = Role::firstOrCreate([
             'name' => RoleEnum::VENDOR,
+            'guard_name' => 'web'
+        ], [
             'system_reserve' => true
         ]);
 
@@ -416,7 +480,7 @@ class RoleSeeder extends Seeder
             'system_reserve' => false,
         ]);
 
-        $vendorRole->givePermissionTo($vendorPermissions);
+        $vendorRole->syncPermissions($vendorPermissions);
         $vendor->assignRole($vendorRole);
         $store = Store::create([
             'store_name' => 'Fruits Market',
@@ -446,36 +510,22 @@ class RoleSeeder extends Seeder
             'is_completed' => true
         ]);
 
-        $roles = [
-            [
-                'name' => 'Administrator',
-                'slug' => RoleEnum::ADMIN,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Teacher',
-                'slug' => RoleEnum::CONSUMER,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Vendor',
-                'slug' => RoleEnum::VENDOR,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Student',
-                'slug' => RoleEnum::DRIVER,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ];
+        // Create LMS specific roles
+        $teacherRole = Role::firstOrCreate([
+            'name' => RoleEnum::TEACHER,
+            'guard_name' => 'web'
+        ], [
+            'system_reserve' => true
+        ]);
 
-        // Use insertOrIgnore to prevent duplicate entries
-        foreach ($roles as $role) {
-            DB::table('roles')->insertOrIgnore($role);
-        }
+        // Assign permissions to teacher role
+        $teacherRole->syncPermissions($teacherPermissions);
+
+        $studentRole = Role::firstOrCreate([
+            'name' => RoleEnum::STUDENT,
+            'guard_name' => 'web'
+        ], [
+            'system_reserve' => true
+        ]);
     }
 }

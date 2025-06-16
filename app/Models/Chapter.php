@@ -21,9 +21,9 @@ class Chapter extends Model
     {
         parent::boot();
 
-        // Order chapters with serial number by default
-        static::addGlobalScope('serial_number', function ($builder) {
-            $builder->orderBy('serial_number');
+        // Order chapters with order by default
+        static::addGlobalScope('order', function ($builder) {
+            $builder->orderBy('order');
         });
     }
 

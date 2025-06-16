@@ -237,4 +237,172 @@ class RevenueController extends Controller
             'revenue_details' => $revenueDetails,
         ]);
     }
+
+    /**
+     * Admin: Get overall revenue summary
+     */
+    public function adminSummary(Request $request)
+    {
+        // Check admin permission
+        if (!Auth::user()->hasRole('admin')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $startDate = $request->start_date ? Carbon::parse($request->start_date) : Carbon::now()->subMonth();
+        $endDate = $request->end_date ? Carbon::parse($request->end_date) : Carbon::now();
+
+        // Get all revenue data
+        $revenues = Revenue::whereBetween('payment_date', [$startDate, $endDate])->get();
+
+        // Calculate totals
+        $totalRevenue = $revenues->sum('total_amount');
+        $totalInstructorEarnings = $revenues->sum('instructor_amount');
+        $totalCharityContributions = $revenues->sum('charity_amount');
+        $totalPlatformFees = $revenues->sum('platform_fee');
+
+        // Get enrollment-based revenue (fallback if Revenue table is empty)
+        if ($totalRevenue == 0) {
+            $enrollmentRevenue = Enrollment::where('status', 'active')
+                ->whereBetween('enrollment_date', [$startDate, $endDate])
+                ->sum('amount_paid');
+            
+            $totalRevenue = $enrollmentRevenue;
+            $totalCharityContributions = $enrollmentRevenue * 0.03;
+            $totalPlatformFees = $enrollmentRevenue * 0.05;
+            $totalInstructorEarnings = $enrollmentRevenue - $totalCharityContributions - $totalPlatformFees;
+        }
+
+        // Get instructor breakdown
+        $instructorBreakdown = Revenue::select('instructor_id')
+            ->selectRaw('SUM(total_amount) as total_revenue')
+            ->selectRaw('SUM(instructor_amount) as instructor_earnings')
+            ->selectRaw('SUM(charity_amount) as charity_contributions')
+            ->selectRaw('COUNT(*) as transactions_count')
+            ->with('instructor:id,name,email')
+            ->whereBetween('payment_date', [$startDate, $endDate])
+            ->groupBy('instructor_id')
+            ->orderBy('total_revenue', 'desc')
+            ->limit(10)
+            ->get();
+
+        // Monthly breakdown
+        $monthlyBreakdown = Revenue::select(
+                DB::raw('YEAR(payment_date) as year'),
+                DB::raw('MONTH(payment_date) as month'),
+                DB::raw('SUM(total_amount) as total_revenue'),
+                DB::raw('SUM(charity_amount) as charity_amount'),
+                DB::raw('SUM(platform_fee) as platform_fee'),
+                DB::raw('COUNT(*) as transactions')
+            )
+            ->whereBetween('payment_date', [$startDate, $endDate])
+            ->groupBy('year', 'month')
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->get();
+
+        // Payment method breakdown
+        $paymentMethodBreakdown = Revenue::select('payment_method')
+            ->selectRaw('SUM(total_amount) as total_amount')
+            ->selectRaw('COUNT(*) as transaction_count')
+            ->whereBetween('payment_date', [$startDate, $endDate])
+            ->groupBy('payment_method')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'period' => [
+                    'start_date' => $startDate->format('Y-m-d'),
+                    'end_date' => $endDate->format('Y-m-d'),
+                ],
+                'summary' => [
+                    'total_revenue' => $totalRevenue,
+                    'instructor_earnings' => $totalInstructorEarnings,
+                    'charity_contributions' => $totalCharityContributions,
+                    'platform_fees' => $totalPlatformFees,
+                    'charity_percentage' => 3,
+                    'platform_percentage' => 5,
+                ],
+                'instructor_breakdown' => $instructorBreakdown,
+                'monthly_breakdown' => $monthlyBreakdown,
+                'payment_method_breakdown' => $paymentMethodBreakdown,
+            ]
+        ]);
+    }
+
+    /**
+     * Admin: Get monthly revenue breakdown
+     */
+    public function monthlyBreakdown(Request $request)
+    {
+        // Check admin permission
+        if (!Auth::user()->hasRole('admin')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $year = $request->year ?? Carbon::now()->year;
+
+        // Get monthly data from Revenue table
+        $monthlyData = Revenue::select(
+                DB::raw('MONTH(payment_date) as month'),
+                DB::raw('SUM(total_amount) as total_revenue'),
+                DB::raw('SUM(charity_amount) as charity_amount'),
+                DB::raw('SUM(platform_fee) as platform_fee'),
+                DB::raw('SUM(instructor_amount) as instructor_earnings'),
+                DB::raw('COUNT(*) as transactions')
+            )
+            ->whereYear('payment_date', $year)
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        // If no revenue data, get from enrollments
+        if ($monthlyData->isEmpty()) {
+            $monthlyData = Enrollment::select(
+                    DB::raw('MONTH(enrollment_date) as month'),
+                    DB::raw('SUM(amount_paid) as total_revenue'),
+                    DB::raw('SUM(amount_paid * 0.03) as charity_amount'),
+                    DB::raw('SUM(amount_paid * 0.05) as platform_fee'),
+                    DB::raw('SUM(amount_paid * 0.92) as instructor_earnings'),
+                    DB::raw('COUNT(*) as transactions')
+                )
+                ->where('status', 'active')
+                ->whereYear('enrollment_date', $year)
+                ->groupBy('month')
+                ->orderBy('month')
+                ->get();
+        }
+
+        // Format data for charts
+        $chartData = [];
+        $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        for ($i = 1; $i <= 12; $i++) {
+            $monthData = $monthlyData->firstWhere('month', $i);
+            $chartData[] = [
+                'month' => $months[$i - 1],
+                'month_number' => $i,
+                'total_revenue' => $monthData ? $monthData->total_revenue : 0,
+                'charity_amount' => $monthData ? $monthData->charity_amount : 0,
+                'platform_fee' => $monthData ? $monthData->platform_fee : 0,
+                'instructor_earnings' => $monthData ? $monthData->instructor_earnings : 0,
+                'transactions' => $monthData ? $monthData->transactions : 0,
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'year' => $year,
+                'monthly_data' => $chartData,
+                'totals' => [
+                    'total_revenue' => $monthlyData->sum('total_revenue'),
+                    'charity_amount' => $monthlyData->sum('charity_amount'),
+                    'platform_fee' => $monthlyData->sum('platform_fee'),
+                    'instructor_earnings' => $monthlyData->sum('instructor_earnings'),
+                    'transactions' => $monthlyData->sum('transactions'),
+                ]
+            ]
+        ]);
+    }
 }

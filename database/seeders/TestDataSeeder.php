@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\User;
+use App\Models\Course;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
@@ -107,6 +108,61 @@ class TestDataSeeder extends Seeder
             );
             
             echo "Categories created successfully!\n";
+
+            // Create courses
+            $courses = [
+                [
+                    'title' => 'Introduction to Laravel',
+                    'description' => 'Learn Laravel from scratch with hands-on examples',
+                    'slug' => 'intro-laravel',
+                    'price' => 99.99,
+                    'level' => 'beginner',
+                    'is_published' => true,
+                    'status' => 'published',
+                    'user_id' => $instructor1->id,
+                    'category_id' => $webDevCategory->id
+                ],
+                [
+                    'title' => 'Advanced PHP Development',
+                    'description' => 'Master advanced PHP concepts and best practices',
+                    'slug' => 'advanced-php',
+                    'price' => 149.99,
+                    'level' => 'advanced',
+                    'is_published' => true,
+                    'status' => 'published',
+                    'user_id' => $instructor1->id,
+                    'category_id' => $webDevCategory->id
+                ],
+                [
+                    'title' => 'React for Beginners',
+                    'description' => 'Learn React step by step with practical projects',
+                    'slug' => 'react-beginners',
+                    'price' => 79.99,
+                    'level' => 'beginner',
+                    'is_published' => true,
+                    'status' => 'published',
+                    'user_id' => $instructor2->id,
+                    'category_id' => $webDevCategory->id
+                ],
+                [
+                    'title' => 'Data Analysis with Python',
+                    'description' => 'Learn data analysis using Python and pandas',
+                    'slug' => 'data-analysis-python',
+                    'price' => 129.99,
+                    'level' => 'intermediate',
+                    'is_published' => true,
+                    'status' => 'published',
+                    'user_id' => $instructor2->id,
+                    'category_id' => $dataCategory->id
+                ]
+            ];
+
+            foreach ($courses as $courseData) {
+                Course::firstOrCreate(['slug' => $courseData['slug']], $courseData);
+            }
+
+            echo "Courses created successfully!\n";
+
         } catch (\Exception $e) {
             echo "Error creating categories: " . $e->getMessage() . "\n";
         }

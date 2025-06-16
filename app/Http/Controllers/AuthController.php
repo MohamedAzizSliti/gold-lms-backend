@@ -153,8 +153,10 @@ class AuthController extends Controller
             ]);
 
             if ($request->has('role') && $request->input('role') == 'student'){
-                $user->assignRole(RoleEnum::DRIVER);
-            }else{
+                $user->assignRole(RoleEnum::STUDENT);
+            } elseif ($request->has('role') && $request->input('role') == 'teacher') {
+                $user->assignRole(RoleEnum::TEACHER);
+            } else {
                 $user->assignRole(RoleEnum::CONSUMER);
             }
 

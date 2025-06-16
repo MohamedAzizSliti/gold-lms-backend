@@ -45,7 +45,7 @@ class Content extends Model
     {
         $media =  null;
 
-        if ($this->media && Storage::disk('public')->exists($this->media->src)) {
+        if ($this->media && $this->media->src && Storage::disk('public')->exists($this->media->src)) {
             $media = url('admin'.Storage::url($this->media->src));
             $media = ['original_url' => $media];
         }

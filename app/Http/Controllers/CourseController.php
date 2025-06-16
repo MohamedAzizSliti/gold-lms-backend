@@ -34,9 +34,39 @@ class CourseController extends Controller
     public function index(Request $request)
     {
         try {
-
             $product = $this->filter($this->repository, $request);
-            return $product->latest('created_at')->paginate($request->paginate ?? $product->count());
+            $courses = $product->latest('created_at')->paginate($request->paginate ?? $product->count());
+            
+            // Transform courses to ensure media_path is available
+            $courses->getCollection()->transform(function($course) {
+                // Load media relationship if not already loaded
+                if (!$course->relationLoaded('media')) {
+                    $course->load('media');
+                }
+                
+                // Add cover_image information for backward compatibility
+                $course->cover_image = null;
+                if ($course->media_id && $course->media) {
+                    $baseUrl = request()->getSchemeAndHttpHost();
+                    $filename = basename($course->media->file_name ?? '');
+                    $course->cover_image = [
+                        'id' => $course->media_id,
+                        'url' => $baseUrl . '/admin/api/files/course-covers/' . $filename,
+                        'name' => $course->media->name ?? '',
+                        'file_name' => $course->media->file_name ?? ''
+                    ];
+                }
+                
+                // Ensure media_path accessor is triggered and available
+                $mediaPath = $course->media_path;
+                if ($mediaPath) {
+                    $course->setAttribute('media_path', $mediaPath);
+                }
+                
+                return $course;
+            });
+            
+            return $courses;
 
         } catch (Exception $e) {
 
@@ -50,6 +80,28 @@ class CourseController extends Controller
      */
     public function show($id){
         $course = Course::with(['category','instructor','chapters.contents','enrollments','media','exams.questions','quizzes.questions'])->find($id);
+        
+        if ($course) {
+            // Add cover_image information for backward compatibility
+            $course->cover_image = null;
+            if ($course->media_id && $course->media) {
+                $baseUrl = request()->getSchemeAndHttpHost();
+                $filename = basename($course->media->file_name ?? '');
+                $course->cover_image = [
+                    'id' => $course->media_id,
+                    'url' => $baseUrl . '/admin/api/files/course-covers/' . $filename,
+                    'name' => $course->media->name ?? '',
+                    'file_name' => $course->media->file_name ?? ''
+                ];
+            }
+            
+            // Ensure media_path accessor is triggered and available
+            $mediaPath = $course->media_path;
+            if ($mediaPath) {
+                $course->setAttribute('media_path', $mediaPath);
+            }
+        }
+        
         return $this->json('msg',$course);
     }
 
@@ -64,11 +116,16 @@ class CourseController extends Controller
      */
     public function store(Request $request)
     {
+        // Add the authenticated user as the course owner
+        $request->merge([
+            'user_id' => auth()->id(),
+            'instructor_id' => auth()->id()
+        ]);
 
         $course = CourseRepository::storeByRequest($request);
 
         return $this->json('Course created successfully', [
-            //'course' => CourseResource::make($course)
+            'course' => $course
         ], 201);
     }
 

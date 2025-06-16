@@ -13,15 +13,10 @@ return new class extends Migration
     {
         Schema::create('contents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('chapter_id')->constrained()->onDelete('cascade');
-            $table->unsignedBigInteger('media_id');
-            $table->foreign('media_id')
-                ->references('id')
-                ->on('media')
-                ->onDelete('cascade')
-                ->onUpdate('cascade');
+            $table->foreignId('chapter_id')->constrained('chapters')->onDelete('cascade');
+            $table->foreignId('media_id')->nullable()->constrained('media')->onDelete('set null');
             $table->string('title');
-            $table->string('type');
+            $table->enum('type', ['video', 'text', 'pdf', 'audio']);
             $table->integer('duration')->default(0);
             $table->integer('serial_number');
             $table->boolean('is_forwardable')->default(false);
